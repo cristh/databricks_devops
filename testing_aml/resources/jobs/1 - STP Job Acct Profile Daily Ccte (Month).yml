@@ -1,0 +1,32 @@
+resources:
+  jobs:
+    STP_Job_Acct_Profile_Daily_Ccte_Month:
+      name: 1 - STP Job Acct Profile Daily Ccte (Month)
+      tasks:
+        - task_key: Acct_Profile_Daily_Ccte_Month
+          notebook_task:
+            notebook_path: ../notebooks/AML-Datos/Jobs/STP Daily Acct Profile Ccte (Month).py
+            source: WORKSPACE
+          job_cluster_key: Job_cluster
+      job_clusters:
+        - job_cluster_key: Job_cluster
+          new_cluster:
+            cluster_name: ""
+            spark_version: 17.3.x-scala2.13
+            #aws_attributes:
+            #  first_on_demand: 1
+            #  availability: SPOT_WITH_FALLBACK
+            #  zone_id: us-east-1a
+            #  spot_bid_price_percent: 100
+            #  ebs_volume_count: 0
+            node_type_id: Standard_DS3_v2
+            spark_env_vars:
+              PYSPARK_PYTHON: /databricks/python3/bin/python3
+            enable_elastic_disk: false
+            data_security_mode: SINGLE_USER
+            runtime_engine: PHOTON
+            num_workers: 8
+      tags:
+        Project: STP
+      queue:
+        enabled: true

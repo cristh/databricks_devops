@@ -1,0 +1,73 @@
+resources:
+  jobs:
+    Ingesta_de_Datos_STP:
+      name: 0 - Ingesta de Datos STP
+      tasks:
+        - task_key: mts_dcontratantes
+          notebook_task:
+            notebook_path: ../notebooks/AML-Datos/mts_dcontratantes.py
+            source: WORKSPACE
+          job_cluster_key: Job_cluster_STP
+        - task_key: mts_dcontratantes_tiempo
+          notebook_task:
+            notebook_path: ../notebooks/AML-Datos/mts_dcontratantes_tiempo.py
+            source: WORKSPACE
+          job_cluster_key: Job_cluster_STP
+        - task_key: mts_ds_clientes
+          notebook_task:
+            notebook_path: ../notebooks/AML-Datos/mts_ds_clientes.py
+            source: WORKSPACE
+          job_cluster_key: Job_Cluster_H
+        - task_key: mts_hoperacionescntr_validos
+          notebook_task:
+            notebook_path: ../notebooks/AML-Datos/Migracion_MTS_HOPERACIONESCNTR_VALIDOS.py
+            source: WORKSPACE
+          job_cluster_key: Job_Cluster_H
+        - task_key: mts_perfil_declarado
+          notebook_task:
+            notebook_path: ../notebooks/AML-Datos/mts_kyc_atrval_calif_riesgos.py
+            source: WORKSPACE
+          job_cluster_key: Job_cluster_STP
+        - task_key: tipos_cambio
+          notebook_task:
+            notebook_path: ../notebooks/AML-Datos/mts_htipos_cambio.py
+            source: WORKSPACE
+          job_cluster_key: Job_cluster_STP
+      job_clusters:
+        - job_cluster_key: Job_Cluster_H
+          new_cluster:
+            cluster_name: ""
+            spark_version: 17.3.x-scala2.13
+            #aws_attributes:
+            #  first_on_demand: 1
+            #  availability: SPOT_WITH_FALLBACK
+            #  zone_id: auto
+            #  spot_bid_price_percent: 100
+            node_type_id: Standard_DS3_v2
+            spark_env_vars:
+              PYSPARK_PYTHON: /databricks/python3/bin/python3
+            enable_elastic_disk: true
+            #policy_id: 0011AE2243CE30F8
+            data_security_mode: USER_ISOLATION
+            runtime_engine: PHOTON
+            kind: CLASSIC_PREVIEW
+            is_single_node: false
+            num_workers: 4
+        - job_cluster_key: Job_cluster_STP
+          new_cluster:
+            cluster_name: ""
+            spark_version: 16.4.x-scala2.12
+            #aws_attributes:
+            #  availability: SPOT_WITH_FALLBACK
+            node_type_id: Standard_DS3_v2
+            spark_env_vars:
+              PYSPARK_PYTHON: /databricks/python3/bin/python3
+            data_security_mode: DATA_SECURITY_MODE_STANDARD
+            runtime_engine: PHOTON
+            kind: CLASSIC_PREVIEW
+            is_single_node: false
+            num_workers: 1
+      tags:
+        Project: STP
+      queue:
+        enabled: true
