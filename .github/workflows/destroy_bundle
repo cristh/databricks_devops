@@ -1,0 +1,53 @@
+name: Destroy Databricks Bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target to destroy"
+        required: true
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
+
+permissions:
+  contents: read
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target }}
+
+    env:
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Locate bundle root
+        run: |
+          set -euo pipefail
+          BUNDLE_FILE="$(find . -maxdepth 5 -name databricks.yml -type f | head -n 1)"
+          if [ -z "$BUNDLE_FILE" ]; then
+            echo "ERROR: databricks.yml was not found."
+            exit 1
+          fi
+          BUNDLE_DIR="$(dirname "$BUNDLE_FILE")"
+          echo "BUNDLE_DIR=$BUNDLE_DIR" >> "$GITHUB_ENV"
+
+      - name: Bundle summary before destroy
+        run: |
+          cd "$BUNDLE_DIR"
+          databricks bundle summary -t "${{ inputs.target }}" --force-pull
+
+      - name: Destroy bundle
+        run: |
+          cd "$BUNDLE_DIR"
+          databricks bundle destroy -t "${{ inputs.target }}" --auto-approve
