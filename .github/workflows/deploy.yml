@@ -20,6 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.target }}
 
+    env:
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -27,20 +31,47 @@ jobs:
       - name: Setup Databricks CLI
         uses: databricks/setup-cli@main
 
+      - name: Locate bundle root
+        run: |
+          set -euo pipefail
+
+          echo "Repository root:"
+          pwd
+
+          echo "Searching for databricks.yml..."
+          BUNDLE_FILE="$(find . -maxdepth 5 -name databricks.yml -type f | head -n 1)"
+
+          if [ -z "$BUNDLE_FILE" ]; then
+            echo "ERROR: databricks.yml was not found in the repository."
+            echo "Current files:"
+            find . -maxdepth 3 -type f | sort
+            exit 1
+          fi
+
+          BUNDLE_DIR="$(dirname "$BUNDLE_FILE")"
+
+          echo "Found bundle file: $BUNDLE_FILE"
+          echo "Bundle directory: $BUNDLE_DIR"
+
+          echo "BUNDLE_DIR=$BUNDLE_DIR" >> "$GITHUB_ENV"
+
+      - name: Check Databricks CLI version
+        run: databricks version
+
       - name: Validate bundle
-        run: databricks bundle validate -t ${{ inputs.target }}
-        env:
-          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd "$BUNDLE_DIR"
+          databricks bundle validate -t "${{ inputs.target }}"
 
       - name: Deploy bundle
-        run: databricks bundle deploy -t ${{ inputs.target }}
-        env:
-          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd "$BUNDLE_DIR"
+          databricks bundle deploy -t "${{ inputs.target }}"
 
       - name: Bundle summary
-        run: databricks bundle summary -t ${{ inputs.target }} --force-pull
-        env:
-          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd "$BUNDLE_DIR"
+          databricks bundle summary -t "${{ inputs.target }}" --force-pull
